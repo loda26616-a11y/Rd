@@ -10,18 +10,19 @@ from io import BytesIO
 from datetime import datetime
 import asyncio
 
+# --- Secrets/Env Variables ---
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 APK_URL = os.environ.get("APK_URL")
 VIP_CHANNEL_URL = os.environ.get("VIP_CHANNEL_URL")
 BOT_USERNAME = os.environ.get("BOT_USERNAME")
 LEAVE_MSG_URL = os.environ.get("LEAVE_MSG_URL")
+# Yahan Github video URL add karein apne secrets me
+WELCOME_VIDEO_URL = os.environ.get("WELCOME_VIDEO_URL") 
 
 USERS_FILE = "users.json"
-WELCOME_IMAGE_URL = "https://kommodo.ai/i/lk66ZvAY1u3vzHXU9aLN"
 LEAVE_IMAGE_URL = "https://kommodo.ai/i/UTlTK3RUQvuCGsM1aCLS"
 
 APK_CACHE = None
-
 
 # ================= USERS =================
 def load_users():
@@ -33,11 +34,9 @@ def load_users():
         pass
     return []
 
-
 def save_users(users):
     with open(USERS_FILE, "w") as f:
         json.dump(users, f, indent=2)
-
 
 def add_user(user, users):
     if not any(u["id"] == user.id for u in users):
@@ -48,7 +47,6 @@ def add_user(user, users):
             "joined_at": datetime.now().isoformat()
         })
         save_users(users)
-
 
 # ================= APK CACHE =================
 def fetch_apk():
@@ -62,12 +60,12 @@ def fetch_apk():
     except Exception as e:
         print("APK error:", e)
 
-
 # ================= SEND APK =================
 async def send_apk(user_id, context):
     if not APK_CACHE:
         return
 
+    # Button sirf APK ke liye
     btn = InlineKeyboardMarkup([
         [InlineKeyboardButton("GET SECRET APK ✅", url=f"https://t.me/{BOT_USERNAME}?start=apk")]
     ])
@@ -88,7 +86,6 @@ async def send_apk(user_id, context):
         reply_markup=btn
     )
 
-
 # ================= JOIN REQUEST =================
 async def join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.chat_join_request.from_user
@@ -97,22 +94,32 @@ async def join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         users = load_users()
         add_user(user, users)
 
-        btn = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔥 VIP CHANNEL LINK 🔥", url=VIP_CHANNEL_URL)]
-        ])
-
-        await context.bot.send_photo(
+        # 1. Welcome Video (Photo ki jagah Video)
+        # Yahan VIP button hata diya gaya hai
+        await context.bot.send_video(
             chat_id=user.id,
-            photo=WELCOME_IMAGE_URL,
-            caption="🚀🔥 WELCOME TO RD TRADERS PREMIUM BOT 🔥",
-            reply_markup=btn
+            video=WELCOME_VIDEO_URL,
+            caption="💰How To Activate Vip Hack💰
+Pls Video Ko Pura Dekhna
+      💯 Setup Video 💯"
         )
 
+        # 2. Send APK Message
         await send_apk(user.id, context)
+        
+        # Thoda gap taaki messages sequence me dikhein
+        await asyncio.sleep(1)
+
+        # 3. New Third Message (Sureshot Channel)
+        promo_msg = (
+            "VIP NUMBER SURESHOT CHANNEL JOIN FREEE 👇🏻👇🏻\n\n"
+            "https://t.me/+7SIcw7FkDo5hMjI1\n"
+            "https://t.me/+7SIcw7FkDo5hMjI1"
+        )
+        await context.bot.send_message(chat_id=user.id, text=promo_msg)
 
     except Exception as e:
         print("Join error:", e)
-
 
 # ================= LEAVE TRACK =================
 async def track_leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -131,10 +138,8 @@ async def track_leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 caption="🙌 CONGRATULATIONS 🎉 APKO AB YE SARE FREE MELNE WALA HAI ES CHANNEL ME 👇🏻",
                 reply_markup=btn
             )
-
     except Exception as e:
         print("Leave error:", e)
-
 
 # ================= BROADCAST =================
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -156,7 +161,6 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(f"Broadcast sent to {sent} users ✅")
 
-
 # ================= START =================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -167,7 +171,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await send_apk(user.id, context)
     else:
         await update.message.reply_text("Click button to get APK 🔥")
-
 
 # ================= MAIN =================
 def main():
@@ -180,7 +183,6 @@ def main():
     app.add_handler(CommandHandler("broadcast", broadcast))
 
     app.run_polling()
-
 
 if __name__ == "__main__":
     main()
